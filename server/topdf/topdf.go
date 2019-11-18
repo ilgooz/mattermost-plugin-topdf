@@ -101,12 +101,12 @@ func (t *TOPDF) createAndSavePDF(fileID string, userID string) (pdf []byte, err 
 		return nil, normalizeAppErr(aerr)
 	}
 	// get file's content by fileID.
-	byts, aerr := t.mapi.GetFile(fileID)
+	fileBytes, aerr := t.mapi.GetFile(fileID)
 	if aerr != nil {
 		return nil, normalizeAppErr(aerr)
 	}
 	// convert file to PDF by using PDF server.
-	r, err := t.server.Convert(info.Name, info.Extension, bytes.NewReader(byts))
+	r, err := t.server.Convert(info.Name, info.Extension, bytes.NewReader(fileBytes))
 	if err != nil {
 		return nil, err
 	}

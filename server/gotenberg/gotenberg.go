@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -141,7 +143,7 @@ func (g *Gotenberg) Convert(name, extension string, file io.Reader) (pdf io.Read
 		// file content can be invalid or some timeout might be hitting set by Gotenberg's end or here in the request.
 		data, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "error while reading error message from Gotenberg")
 		}
 		return nil, fmt.Errorf("error from Gotenberg with '%d' code: %s", res.StatusCode, string(data))
 	}
@@ -150,7 +152,6 @@ func (g *Gotenberg) Convert(name, extension string, file io.Reader) (pdf io.Read
 }
 
 // buildGotenbergURL generates a Gotenberg API URL from given addr for endpoint.
-// TODO(ilgooz): maybe cache generated URLs in memory to improve performance.
 func buildGotenbergURL(addr, endpoint string) (string, error) {
 	u, err := url.Parse(addr)
 	if err != nil {

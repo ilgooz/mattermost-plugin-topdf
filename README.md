@@ -8,6 +8,8 @@ _TOPDF_ plugin automatically generates PDF previews of Microsoft Office files at
   ```
   Make sure that you've set large timeouts for Gotenberg server like in the sample above since converting big files takes time.
 
+  For more information about how to install & customize Gotenberg server, please follow the [docs](https://thecodingmachine.github.io/gotenberg/#install).
+
 2. Go to the [releases page of this Github repository](https://github.com/ilgooz/mattermost-plugin-topdf/releases) and download the latest release for your Mattermost server.
    
 3. In the Mattermost System Console under **System Console > Plugins > Plugin Management** upload the file to install the plugin. To learn more about how to upload a plugin, [see the documentation](https://docs.mattermost.com/administration/plugins.html#plugin-uploads).

@@ -1,7 +1,7 @@
 {
   "id": "topdf",
   "name": "TOPDF",
-  "description": "This plugin converts Office files that attached to posts to PDF files and enables previewing for Office files on `webapp`",
+  "description": "Automatically generate PDF previews of Microsoft Office files attached to posts using Gotenburg.",
   "version": "0.1.0",
   "min_server_version": "5.14.0",
   "webapp": {
@@ -15,7 +15,7 @@
     }
   },
   "settings_schema": {
-    "header": "PDF plugin to convert uploaded files to pdf. Ony Office files supported at this moment.",
+    "header": "PDF plugin to convert uploaded files to pdf. Only Office files supported at this moment.",
     "footer": "",
     "settings": [{
       "key": "GotenbergAddress",

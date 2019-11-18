@@ -8,7 +8,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 )
 
@@ -39,13 +38,6 @@ var supportedFormats = []string{"doc", "docx", "odt", "xls", "xlsx", "ods", "ppt
 // warning! don't forget to set proper timeouts as you need in Gotenberg server because default ones are too low. ex:
 // - docker run -d -p 4798:3000 --env DEFAULT_WAIT_TIMEOUT=600 --env MAXIMUM_WAIT_TIMEOUT=600 thecodingmachine/gotenberg:6
 type Gotenberg struct {
-	m sync.RWMutex // protects config.
-	// config holds configs set as options.
-	conf *config
-}
-
-// config holds configs set as options.
-type config struct {
 	// addr is network address of Gotenberg server.
 	addr string
 	// convertTimout is used during sending file convert requests.
@@ -54,28 +46,19 @@ type config struct {
 
 // New creates new Gotenberg client with given Gotenberg server addr and options.
 func New(addr string, options ...Option) *Gotenberg {
-	g := &Gotenberg{conf: &config{addr: addr}}
-	g.UpdateConfig(options...)
+	g := &Gotenberg{addr: addr}
+	g.applyOptions(options...)
 	return g
 }
 
-// UpdateConfig updates options set during the first initialization of New.
-func (g *Gotenberg) UpdateConfig(options ...Option) {
-	g.m.Lock()
-	defer g.m.Unlock()
+// applyOptions applies user given options to Gotenberg configuration.
+func (g *Gotenberg) applyOptions(options ...Option) {
 	for _, o := range options {
 		o(g)
 	}
-	if g.conf.convertTimeout == 0 {
-		g.conf.convertTimeout = defaultConvertTimeout
+	if g.convertTimeout == 0 {
+		g.convertTimeout = defaultConvertTimeout
 	}
-}
-
-// cloneConfing gets a snapshot of config's current state.
-func (g *Gotenberg) cloneConfing() config {
-	g.m.RLock()
-	defer g.m.RUnlock()
-	return *g.conf
 }
 
 // Option used to customize Gotenberg defaults.
@@ -85,22 +68,14 @@ type Option func(*Gotenberg)
 // to Gotenberg server.
 func ConvertTimeoutOption(convertTimeout time.Duration) Option {
 	return func(g *Gotenberg) {
-		g.conf.convertTimeout = convertTimeout
-	}
-}
-
-// AddrOption updates addr set during call to New().
-func AddrOption(addr string) Option {
-	return func(g *Gotenberg) {
-		g.conf.addr = addr
+		g.convertTimeout = convertTimeout
 	}
 }
 
 // Status checks if Gotenberg server is running and ready to accept connections.
 func (g *Gotenberg) Status() (running bool, err error) {
 	c := &http.Client{Timeout: pingTimeout}
-	conf := g.cloneConfing()
-	url, err := buildGotenbergURL(conf.addr, pingEndpoint)
+	url, err := buildGotenbergURL(g.addr, pingEndpoint)
 	if err != nil {
 		return false, err
 	}
@@ -143,8 +118,7 @@ func (g *Gotenberg) Convert(name, extension string, file io.Reader) (pdf io.Read
 		_, err = io.Copy(part, file)
 		closer(err)
 	}()
-	conf := g.cloneConfing()
-	url, err := buildGotenbergURL(conf.addr, convertEndpoint)
+	url, err := buildGotenbergURL(g.addr, convertEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +128,7 @@ func (g *Gotenberg) Convert(name, extension string, file io.Reader) (pdf io.Read
 		return nil, err
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
-	c := &http.Client{Timeout: conf.convertTimeout}
+	c := &http.Client{Timeout: g.convertTimeout}
 	res, err := c.Do(req)
 	if err != nil {
 		return nil, err

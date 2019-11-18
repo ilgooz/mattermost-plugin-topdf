@@ -24,10 +24,6 @@ type Plugin struct {
 		CheckServerStatus() (running bool, err error)
 		GetPDF(userID, fileID string) (pdf io.ReadCloser, err error)
 	} // *topdf.TOPDF
-
-	// gt used by the app to interact with topdf.PDFServer implementation(Gotenberg).
-	// it's also used by Plugin to update Gotenberg's configs when Plugin configs reloaded.
-	gt *gotenberg.Gotenberg
 }
 
 // configuration holds Plugin's config.
@@ -38,17 +34,7 @@ type configuration struct {
 }
 
 func main() {
-	plugin.ClientMain(&Plugin{
-		gt: gotenberg.New("http://localhost:3000"),
-	})
-}
-
-// OnActivate hook initializes TOPDF app.
-// plugin.MattermostPlugin.API is set just before this hook is called, this is why
-// we're initializing the app at this stage.
-func (p *Plugin) OnActivate() error {
-	p.app = topdf.New(p.MattermostPlugin.API, p.gt)
-	return nil
+	plugin.ClientMain(&Plugin{})
 }
 
 // OnConfigurationChange hook updates underlying Gotenberg configs.
@@ -57,12 +43,16 @@ func (p *Plugin) OnConfigurationChange() error {
 	if err := p.API.LoadPluginConfiguration(&conf); err != nil {
 		return err
 	}
-	options := []gotenberg.Option{
-		gotenberg.AddrOption(conf.GotenbergAddress),
-		gotenberg.ConvertTimeoutOption(time.Duration(conf.GotenbergConvertTimeout)),
-	}
-	p.gt.UpdateConfig(options...)
+	p.init(conf)
 	return nil
+}
+
+// init initializes a new topdf with given c.
+func (p *Plugin) init(c configuration) {
+	gt := gotenberg.New(c.GotenbergAddress, []gotenberg.Option{
+		gotenberg.ConvertTimeoutOption(time.Duration(c.GotenbergConvertTimeout)),
+	}...)
+	p.app = topdf.New(p.MattermostPlugin.API, gt)
 }
 
 // ServeHTTP hook exposes a RESTful API for `topdf` plugin.

@@ -13,8 +13,6 @@ import pptIcon from '../images/icons/ppt.svg';
 import videoIcon from '../images/icons/video.svg';
 import wordIcon from '../images/icons/word.svg';
 
-import {t} from './i18n';
-
 export const FileTypes = {
   IMAGE: 'image',
   AUDIO: 'audio',
@@ -54,14 +52,5 @@ export const Constants = {
       other: genericIcon,
   },
 };
-
-t('suggestion.mention.channels');
-t('suggestion.mention.morechannels');
-t('suggestion.mention.unread.channels');
-t('suggestion.mention.members');
-t('suggestion.mention.moremembers');
-t('suggestion.mention.nonmembers');
-t('suggestion.mention.special');
-t('suggestion.archive');
 
 export default Constants;

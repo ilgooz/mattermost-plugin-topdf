@@ -1,20 +1,4 @@
 import Constants, {FileTypes} from './constants.jsx';
-import {getCurrentLocale, getTranslations} from '../selectors/i18n';
-import store from '../stores/redux_store.jsx';
-
-export function localizeMessage(id, defaultMessage) {
-  const state = store.getState();
-
-  const locale = getCurrentLocale(state);
-  const translations = getTranslations(state, locale);
-
-  if (!translations || !(id in translations)) {
-      return defaultMessage || id;
-  }
-
-  return translations[id];
-}
-
 
 // Converts a file size in bytes into a human-readable string of the form '123MB'.
 export function fileSizeToString(bytes) {
@@ -32,7 +16,6 @@ export function fileSizeToString(bytes) {
   return bytes + 'B';
 }
 
-
 export function getFileIconPath(fileInfo) {
   const fileType = getFileType(fileInfo.extension);
 
@@ -45,7 +28,6 @@ export function getFileIconPath(fileInfo) {
 
   return icon;
 }
-
 
 export const getFileType = (extin) => {
   const ext = removeQuerystringOrHash(extin.toLowerCase());

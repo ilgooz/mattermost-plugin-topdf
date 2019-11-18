@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	// pingTimeout set while sending ping requests to Gotenberg server.
+	// pingTimeout defines the timeout for ping requests to the Gotenberg server.
 	pingTimeout = time.Second * 5
 
-	// defaultConvertTimeout set while sending and waiting response ofr file convert requests
+	// defaultConvertTimeout defines the timeout for file conversion requests to the Gotenberg server
 	// to Gotenberg server.
 	defaultConvertTimeout = time.Minute * 10
 )
@@ -81,7 +81,7 @@ func (g *Gotenberg) cloneConfing() config {
 // Option used to customize Gotenberg defaults.
 type Option func(*Gotenberg)
 
-// ConvertTimeoutOption customizes default convert timeout set while sending file convert requests
+// ConversionTimeoutOption sets the timeout for conversion requests.
 // to Gotenberg server.
 func ConvertTimeoutOption(convertTimeout time.Duration) Option {
 	return func(g *Gotenberg) {

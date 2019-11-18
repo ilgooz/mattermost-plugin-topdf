@@ -1,5 +1,5 @@
 ## mattermost-plugin-topdf
-_TOPDF_ plugin converts Office files that attached to posts to PDF files and caches them for future use. To convert a file to PDF simply make a `GET` request to:
+_TOPDF_ plugin automatically generates PDF previews of Microsoft Office files attached to posts for use with Mattermost. The plugin itself depends on [Gotenburg](https://github.com/thecodingmachine/gotenberg) for the heavy lifting, but seamlessly intercepts attachments to generate the previews without further user interaction.
 ```
 http://{mattermostAddr}/plugins/topdf/files/{fileID}
 ```

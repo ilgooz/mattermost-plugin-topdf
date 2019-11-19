@@ -182,6 +182,6 @@ help:
 	@cat Makefile | grep -v '\.PHONY' |  grep -v '\help:' | grep -B1 -E '^[a-zA-Z0-9_.-]+:.*' | sed -e "s/:.*//" | sed -e "s/^## //" |  grep -v '\-\-' | sed '1!G;h;$$!d' | awk 'NR%2{printf "\033[36m%-30s\033[0m",$$0;next;}1' | sort
 
 mocks: ## Creates mock files.
-	GO111MODULE=on $(GOPATH)/bin/mockery -dir server/topdf -all -output server/topdf/mocks -note 'Regenerate this file using `make mocks`.'
+	GO111MODULE=on $(GOPATH)/bin/mockery -dir server/topdf/pdfserver -all -output server/topdf/pdfserver/mocks -note 'Regenerate this file using `make mocks`.'
 	GO111MODULE=on $(GOPATH)/bin/mockery -dir server/x/xplugin -all -output server/x/xplugin/mocks -note 'Regenerate this file using `make mocks`.'
 	GO111MODULE=on $(GOPATH)/bin/mockery -dir server/x/xtopdf -all -output server/x/xtopdf/mocks -note 'Regenerate this file using `make mocks`.'

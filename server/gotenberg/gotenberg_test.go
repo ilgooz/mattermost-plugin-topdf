@@ -1,12 +1,17 @@
 package gotenberg
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
+	"github.com/ilgooz/mattermost-plugin-topdf/server/topdf/pdfserver"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,16 +22,33 @@ func TestStatusRunning(t *testing.T) {
 	}))
 	defer ts.Close()
 	gt := New(ts.URL)
-	isRunning, err := gt.Status()
+	err := gt.Status()
 	require.NoError(t, err)
-	require.True(t, isRunning)
 }
 
 func TestStatusNotRunning(t *testing.T) {
-	gt := New("http://not-existent-host")
-	isRunning, err := gt.Status()
+	// reserve a port to dedicate to this test. otherwise, a randomly chosen port might actually
+	// be belong to a running server which will brake this test.
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
 	require.NoError(t, err)
-	require.False(t, isRunning)
+	ln, err := net.ListenTCP("tcp", addr)
+	require.NoError(t, err)
+	defer ln.Close()
+	port := ln.Addr().(*net.TCPAddr).Port
+	urlStr := fmt.Sprintf("http://localhost:%d", port)
+	gt := New(urlStr)
+	err = gt.Status()
+	require.IsType(t, &pdfserver.NotReachable{}, err)
+	require.True(t, err.(*pdfserver.NotReachable).Reason.(*url.Error).Timeout())
+}
+func TestStatusNotRunningOK(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+	gt := New(ts.URL)
+	err := gt.Status()
+	require.Equal(t, &pdfserver.NotReachable{"Gotenberg", errors.New("received non-OK response code")}, err)
 }
 
 func TestConvertSupportedFormat(t *testing.T) {

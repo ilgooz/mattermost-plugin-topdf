@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/ilgooz/mattermost-plugin-topdf/server/topdf/pdfserver"
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 )
@@ -22,11 +23,11 @@ type TOPDF struct {
 	mapi plugin.API
 
 	// server used to convert files to PDF.
-	server PDFServer
+	server pdfserver.Server
 }
 
 // New creates a new TOPDF app with mapi and PDF server.
-func New(mapi plugin.API, server PDFServer) *TOPDF {
+func New(mapi plugin.API, server pdfserver.Server) *TOPDF {
 	return &TOPDF{
 		mapi:   mapi,
 		server: server,
@@ -34,7 +35,7 @@ func New(mapi plugin.API, server PDFServer) *TOPDF {
 }
 
 // CheckServerStatus checks if underlying PDF server is running and ready to accept requests.
-func (t *TOPDF) CheckServerStatus() (running bool, err error) {
+func (t *TOPDF) CheckServerStatus() error {
 	return t.server.Status()
 }
 

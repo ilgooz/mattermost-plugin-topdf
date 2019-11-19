@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/ilgooz/mattermost-plugin-topdf/server/topdf"
-
 	pMock "github.com/ilgooz/mattermost-plugin-topdf/server/x/xplugin/mocks"
 	tMock "github.com/ilgooz/mattermost-plugin-topdf/server/x/xtopdf/mocks"
 	"github.com/mattermost/mattermost-server/plugin"

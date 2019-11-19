@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ilgooz/mattermost-plugin-topdf/server/gotenberg"
 	"github.com/ilgooz/mattermost-plugin-topdf/server/topdf"
+	"github.com/ilgooz/mattermost-plugin-topdf/server/topdf/pdfserver"
 	"github.com/ilgooz/mattermost-plugin-topdf/server/x/xhttp"
 	"github.com/ilgooz/mattermost-plugin-topdf/server/x/xtime"
 	"github.com/mattermost/mattermost-server/plugin"
@@ -21,7 +22,7 @@ type Plugin struct {
 	// app is the actual, underlying TOPDF app and its features exposed to
 	// network via Plugin's HTTP API.
 	app interface {
-		CheckServerStatus() (running bool, err error)
+		CheckServerStatus() (err error)
 		GetPDF(userID, fileID string) (pdf io.ReadCloser, err error)
 	} // *topdf.TOPDF
 }
@@ -71,14 +72,17 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // handleStatus handles Plugin's status check requests.
 func (p *Plugin) handleStatus(w http.ResponseWriter, r *http.Request) {
-	isRunning, err := p.app.CheckServerStatus()
+	err := p.app.CheckServerStatus()
 	if err != nil {
-		xhttp.ResponseJSON(w, http.StatusInternalServerError, createErrorResponse(err))
-		p.logError(err)
+		if _, ok := err.(*pdfserver.NotReachable); !ok {
+			xhttp.ResponseJSON(w, http.StatusInternalServerError, createErrorResponse(err))
+			p.logError(err)
+			return
+		}
+		xhttp.ResponseJSON(w, http.StatusOK, statusResponse{IsGotenbergRunning: false})
 		return
 	}
-	resp := statusResponse{IsGotenbergRunning: isRunning}
-	xhttp.ResponseJSON(w, http.StatusOK, resp)
+	xhttp.ResponseJSON(w, http.StatusOK, statusResponse{IsGotenbergRunning: true})
 }
 
 // handlePDF handles file to PDF convert requests.

@@ -2,6 +2,7 @@
 package gotenberg
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +11,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/ilgooz/mattermost-plugin-topdf/server/topdf/pdfserver"
+	perrors "github.com/pkg/errors"
 )
 
 const (
@@ -21,6 +23,9 @@ const (
 	// to Gotenberg server.
 	defaultConvertTimeout = time.Minute * 10
 )
+
+// name of the PDF Server.
+const name = "Gotenberg"
 
 const (
 	// pingEndpoint used to status check Gotenberg to see if it's running and ready.
@@ -75,16 +80,22 @@ func ConvertTimeoutOption(convertTimeout time.Duration) Option {
 }
 
 // Status checks if Gotenberg server is running and ready to accept connections.
-func (g *Gotenberg) Status() (running bool, err error) {
+// err is returned when Gotenberg server is not running nor ready or can be related
+// to anything else.
+func (g *Gotenberg) Status() (err error) {
 	c := &http.Client{Timeout: pingTimeout}
 	url, err := buildGotenbergURL(g.addr, pingEndpoint)
 	if err != nil {
-		return false, err
+		return err
 	}
-	if _, err := c.Get(url); err != nil {
-		return false, nil
+	resp, err := c.Get(url)
+	if err != nil {
+		return &pdfserver.NotReachable{ServerName: name, Reason: err}
 	}
-	return true, nil
+	if resp.StatusCode != http.StatusOK {
+		return &pdfserver.NotReachable{ServerName: name, Reason: errors.New("received non-OK response code")}
+	}
+	return nil
 }
 
 // Convert converts file with given name and extension to PDF.
@@ -143,7 +154,7 @@ func (g *Gotenberg) Convert(name, extension string, file io.Reader) (pdf io.Read
 		// file content can be invalid or some timeout might be hitting set by Gotenberg's end or here in the request.
 		data, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			return nil, errors.Wrap(err, "error while reading error message from Gotenberg")
+			return nil, perrors.Wrap(err, "error while reading error message from Gotenberg")
 		}
 		return nil, fmt.Errorf("error from Gotenberg with '%d' code: %s", res.StatusCode, string(data))
 	}

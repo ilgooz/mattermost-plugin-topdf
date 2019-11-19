@@ -6,43 +6,32 @@ import (
 	"io/ioutil"
 	"testing"
 
-	sMock "github.com/ilgooz/mattermost-plugin-topdf/server/topdf/mocks"
+	sMock "github.com/ilgooz/mattermost-plugin-topdf/server/topdf/pdfserver/mocks"
 	pMock "github.com/ilgooz/mattermost-plugin-topdf/server/x/xplugin/mocks"
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCheckServerStatusRunning(t *testing.T) {
-	serverMock := &sMock.PDFServer{}
-	serverMock.On("Status").Once().Return(true, nil)
+	serverMock := &sMock.Server{}
+	serverMock.On("Status").Once().Return(nil)
 	app := New(nil, serverMock)
-	isRunning, err := app.CheckServerStatus()
+	err := app.CheckServerStatus()
 	require.NoError(t, err)
-	require.True(t, isRunning)
-	serverMock.AssertExpectations(t)
-}
-
-func TestCheckServerStatusNotRunning(t *testing.T) {
-	serverMock := &sMock.PDFServer{}
-	serverMock.On("Status").Once().Return(false, nil)
-	app := New(nil, serverMock)
-	isRunning, err := app.CheckServerStatus()
-	require.NoError(t, err)
-	require.False(t, isRunning)
 	serverMock.AssertExpectations(t)
 }
 
 func TestCheckServerStatusError(t *testing.T) {
-	serverMock := &sMock.PDFServer{}
-	serverMock.On("Status").Once().Return(false, errors.New("ops!"))
+	serverMock := &sMock.Server{}
+	serverMock.On("Status").Once().Return(errors.New("ops!"))
 	app := New(nil, serverMock)
-	_, err := app.CheckServerStatus()
+	err := app.CheckServerStatus()
 	require.Equal(t, "ops!", err.Error())
 	serverMock.AssertExpectations(t)
 }
 
 func TestCheckServerConvertCached(t *testing.T) {
-	serverMock := &sMock.PDFServer{}
+	serverMock := &sMock.Server{}
 	apiMock := &pMock.API{}
 	apiMock.On("KVGet", "pdf:file-id").Once().Return([]byte("1"), nil)
 	apiMock.On("GetFile", "1").Once().Return([]byte{2}, nil)
@@ -57,7 +46,7 @@ func TestCheckServerConvertCached(t *testing.T) {
 }
 
 func TestCheckServerConvertNonCached(t *testing.T) {
-	serverMock := &sMock.PDFServer{}
+	serverMock := &sMock.Server{}
 	apiMock := &pMock.API{}
 	apiMock.On("KVGet", "pdf:file-id").Once().Return([]byte{}, nil)
 	apiMock.On("GetFileInfo", "file-id").Once().Return(&model.FileInfo{PostId: "2", Name: "3", Extension: "4"}, nil)
@@ -78,7 +67,7 @@ func TestCheckServerConvertNonCached(t *testing.T) {
 }
 
 func TestCheckServerConvertUnauthorized(t *testing.T) {
-	serverMock := &sMock.PDFServer{}
+	serverMock := &sMock.Server{}
 	apiMock := &pMock.API{}
 	apiMock.On("KVGet", "pdf:pdf-id").Once().Return(nil, &model.AppError{})
 	app := New(apiMock, serverMock)

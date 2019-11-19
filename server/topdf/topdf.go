@@ -68,46 +68,46 @@ func (t *TOPDF) getPDF(userID, fileID string) (pdf io.ReadCloser, err error) {
 	if aerr != nil {
 		return nil, normalizeAppErr(aerr)
 	}
+	// get file's info.
+	fileInfo, aerr := t.mapi.GetFileInfo(fileID)
+	if aerr != nil {
+		return nil, normalizeAppErr(aerr)
+	}
+	// get associated post for the file.
+	filePost, aerr := t.mapi.GetPost(fileInfo.PostId)
+	if aerr != nil {
+		return nil, normalizeAppErr(aerr)
+	}
+	// check if the user has access to the channel where associated post submitted.
+	if _, aerr := t.mapi.GetChannelMember(filePost.ChannelId, userID); aerr != nil {
+		return nil, normalizeAppErr(aerr)
+	}
 	// if there is no PDF file cached, create it, cache and use its content.
 	if len(pid) == 0 {
-		data, err := t.createAndSavePDF(fileID, userID)
+		data, err := t.createAndSavePDF(fileInfo, filePost)
 		if err != nil {
 			return nil, err
 		}
 		return ioutil.NopCloser(bytes.NewReader(data)), nil
 	}
 	// we have the PDF version in cache, directly return it back.
-	data, aerr := t.mapi.GetFile(string(pid))
-	if aerr != nil {
-		return nil, normalizeAppErr(aerr)
+	data, err := t.getCachedPDF(string(pid))
+	if err != nil {
+		return nil, err
 	}
 	return ioutil.NopCloser(bytes.NewReader(data)), nil
 }
 
 // createAndSavePDF creates a PDF version of fileID and caches on Mattermost server and returns
 // the pdf data back.
-func (t *TOPDF) createAndSavePDF(fileID string, userID string) (pdf []byte, err error) {
-	// get file's info.
-	info, aerr := t.mapi.GetFileInfo(fileID)
-	if aerr != nil {
-		return nil, normalizeAppErr(aerr)
-	}
-	// get associated post for the file.
-	post, aerr := t.mapi.GetPost(info.PostId)
-	if aerr != nil {
-		return nil, normalizeAppErr(aerr)
-	}
-	// check if the user has access to the channel where associated post submitted.
-	if _, aerr := t.mapi.GetChannelMember(post.ChannelId, userID); aerr != nil {
-		return nil, normalizeAppErr(aerr)
-	}
+func (t *TOPDF) createAndSavePDF(fileInfo *model.FileInfo, filePost *model.Post) (pdf []byte, err error) {
 	// get file's content by fileID.
-	fileBytes, aerr := t.mapi.GetFile(fileID)
+	fileBytes, aerr := t.mapi.GetFile(fileInfo.Id)
 	if aerr != nil {
 		return nil, normalizeAppErr(aerr)
 	}
 	// convert file to PDF by using PDF server.
-	r, err := t.server.Convert(info.Name, info.Extension, bytes.NewReader(fileBytes))
+	r, err := t.server.Convert(fileInfo.Name, fileInfo.Extension, bytes.NewReader(fileBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -117,15 +117,24 @@ func (t *TOPDF) createAndSavePDF(fileID string, userID string) (pdf []byte, err 
 		return nil, err
 	}
 	// cache PDF file on Mattermost.
-	inf, aerr := t.mapi.UploadFile(data, post.ChannelId, "pdf")
+	inf, aerr := t.mapi.UploadFile(data, filePost.ChannelId, "pdf")
 	if err != nil {
 		return nil, normalizeAppErr(aerr)
 	}
 	// save PDF file's id by associating it with fileID.
-	if aerr := t.mapi.KVSet(key(fileID), []byte(inf.Id)); err != nil {
+	if aerr := t.mapi.KVSet(key(fileInfo.Id), []byte(inf.Id)); err != nil {
 		return nil, normalizeAppErr(aerr)
 	}
 	// return PDF file's content.
+	return data, nil
+}
+
+// getCachedPDF gets cached PDF data from file store.
+func (t *TOPDF) getCachedPDF(fileID string) (pdf []byte, err error) {
+	data, aerr := t.mapi.GetFile(string(fileID))
+	if aerr != nil {
+		return nil, normalizeAppErr(aerr)
+	}
 	return data, nil
 }
 

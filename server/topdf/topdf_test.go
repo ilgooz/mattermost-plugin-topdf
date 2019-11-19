@@ -34,6 +34,9 @@ func TestCheckServerConvertCached(t *testing.T) {
 	serverMock := &sMock.Server{}
 	apiMock := &pMock.API{}
 	apiMock.On("KVGet", "pdf:file-id").Once().Return([]byte("1"), nil)
+	apiMock.On("GetFileInfo", "file-id").Once().Return(&model.FileInfo{PostId: "2", Name: "3", Extension: "4"}, nil)
+	apiMock.On("GetPost", "2").Once().Return(&model.Post{ChannelId: "5"}, nil)
+	apiMock.On("GetChannelMember", "5", "user-id").Once().Return(nil, nil)
 	apiMock.On("GetFile", "1").Once().Return([]byte{2}, nil)
 	app := New(apiMock, serverMock)
 	pdf, err := app.GetPDF("user-id", "file-id")
@@ -49,7 +52,7 @@ func TestCheckServerConvertNonCached(t *testing.T) {
 	serverMock := &sMock.Server{}
 	apiMock := &pMock.API{}
 	apiMock.On("KVGet", "pdf:file-id").Once().Return([]byte{}, nil)
-	apiMock.On("GetFileInfo", "file-id").Once().Return(&model.FileInfo{PostId: "2", Name: "3", Extension: "4"}, nil)
+	apiMock.On("GetFileInfo", "file-id").Once().Return(&model.FileInfo{Id: "file-id", PostId: "2", Name: "3", Extension: "4"}, nil)
 	apiMock.On("GetPost", "2").Once().Return(&model.Post{ChannelId: "5"}, nil)
 	apiMock.On("GetChannelMember", "5", "user-id").Once().Return(nil, nil)
 	apiMock.On("GetFile", "file-id").Once().Return([]byte{3}, nil)

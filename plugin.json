@@ -1,0 +1,36 @@
+{
+  "id": "topdf",
+  "name": "TOPDF",
+  "description": "Automatically generate PDF previews of Microsoft Office files attached to posts using Gotenburg.",
+  "version": "0.1.0",
+  "min_server_version": "5.14.0",
+  "webapp": {
+    "bundle_path": "webapp/dist/main.js"
+  },
+  "server": {
+    "executables": {
+        "linux-amd64": "server/dist/plugin-linux-amd64",
+        "darwin-amd64": "server/dist/plugin-darwin-amd64",
+        "windows-amd64": "server/dist/plugin-windows-amd64.exe"
+    }
+  },
+  "settings_schema": {
+    "header": "PDF plugin to convert uploaded files to pdf. Only Office files supported at this moment.",
+    "footer": "",
+    "settings": [{
+      "key": "GotenbergAddress",
+      "display_name": "Gotenberg's Full Address",
+      "type": "text",
+      "help_text": "This plugin uses Gotenberg server to convert files to PDFs. See [documentation here](https://thecodingmachine.github.io/gotenberg).\n\n **warning!** don't forget to set proper timeouts as you need in Gotenberg server, for ex:\n `docker run -d -p 4798:3000 --env DEFAULT_WAIT_TIMEOUT=600 --env MAXIMUM_WAIT_TIMEOUT=600 thecodingmachine/gotenberg:6`",
+      "placeholder": "http://localhost:4798",
+      "default": "http://localhost:4798"
+    },{
+      "key": "GotenbergConvertTimeout",
+      "display_name": "File Convert Timeout",
+      "type": "text",
+      "help_text": "This timeout set while initializing a convert request to Gotenberg server and while waiting for whole response to be finished. See timeout format [here](https://golang.org/pkg/time/#ParseDuration).",
+      "placeholder": "600s",
+      "default": "600s"
+    }]
+  }
+}
